@@ -1,73 +1,67 @@
 const today = moment().format("dddd MMM Do YYYY");
-const timeBlockValue = ["8 AM", "9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM"]
+const timeBlockValue = []
 const tasks = [];
 
-// Inserts today dat withing currentDay p-tag 
+// Inserts today's date within currentDay p-tag 
 $("#currentDay").append(today);
 
-function pullTasks() {
-    const savedTasks = JSON.parse(localStorage.getItem("tasks"));
-    for(let i = 8; i < 18; i++) {
-        let newTask;
-        if(!savedTasks) {
-            newTask = {
-                time: moment().hour(i).format("HH") + ":00",
-                task: "",
-                hour: parseInt(moment().hour(i).format("H")),
-            };
-        } else {
-            newTask = savedTasks[i - 8];
-            console.log("newTask", newTask);
-        }
-        tasks.push(newTask);
-    }
-    console.log(tasks);
-    tasks.forEach((elem) => {
-        createTimeBlocks(elem);
-    });
-}
-
+// to generate time blocks html
 function createTimeBlocks(elem) {
+    // for loop that creates values for the time blocks
+    for(i = 8; i <= 17; i++) {
+        const date = new Date();
+        date.setHours(i);
+        timeBlockValue.push(date);
+    };
+
     for(let i = 0; i < timeBlockValue.length; i++) {
-        let taskHour = timeBlockValue[i];
-
+        // formats date object into a string that converts military time to 12 hour increments
+        let taskHour = timeBlockValue[i].toLocaleString('en-US', {hour:'numeric', hour12: true});
+        // creates html for time blocks
        $("#container").append(
-           `<div id='taskParent' class='row'><div id='hour' class='col-2 hour'>${taskHour}</div><input class='col-8' id='typeTask' type='text' placeholder='Type your Tasks here'><button class='col-2 saveBtn' id='saveBtn' type='submit'>Save</button></div>`)
-
-    }
-
-
-}
-
-// $('#taskParent').on('click', '.saveBtn', 
-
-$(".saveBtn").on("click", function(){
-    // set a variable to get values from text area and times
-    tasks.push({
-        "hour" : $('#hour').value,
-        "task" : $('#typeTask').value
-    })
+           `<div id='taskParent' class='row'><div id='hour' class='col-2 hour '>${taskHour}</div><input class='col-8 task-text' id='typeTask-${timeBlockValue[i].getHours()}' type='text' placeholder='Type your Tasks here'><button class='col-2 saveBtn' type='submit' onclick="saveTask(${timeBlockValue[i].getHours()})">Save</button></div>`
+        );
+        // goes into local storage and presents previous task saves
+        $(`#typeTask-${timeBlockValue[i].getHours()}`).val(localStorage.getItem(timeBlockValue[i].getHours().toString()))
+    };
 
 
+};
+// function to save tasks to local storage
+function saveTask(index) {
+    let taskId = '#typeTask-' + index;
+    let taskData = $(taskId).val();
 
-    localStorage.setItem(tasks);
-});
+    localStorage.setItem(index.toString(), taskData)
 
+    console.log(localStorage);
+    console.log(taskData);
+    console.log(index);
+};
 
+// function to change colors of time blocks depending on time of day
 function hourUpdate(){
-    let currentTime = moment().hour().format("HH");
-    $("#parentContainer").each(function() {
-        let blockTime = parseInt($(this).attr("text").split(" ")[1]);
-        if (blockTime < today) {
-            $(this).addClass("past")
+    let currentTime = new Date().getHours();
+    
+    let i = 0;
+    // Selects inputs from within taskParent Container and changes colors bases on past present of future.
+    $("#taskParent>input").each(function() {
+
+        if (timeBlockValue[i].getHours() < currentTime) {
+            $(`#typeTask-${timeBlockValue[i].getHours()}`).addClass("past")
         } else
-        if (blockTime === today) {
-            $(this).removeClass("past").addClass("present")
+        if (timeBlockValue[i].getHours() === currentTime) {
+            $(`#typeTask-${timeBlockValue[i].getHours()}`).removeClass("past").addClass("present")
         }
-        else {$(this).removeClass("past", "present").addClass("future");
+        else {$(`#typeTask-${timeBlockValue[i].getHours()}`).removeClass("past", "present").addClass("future");
         }
+        i++;
     });
 }
+
+// function calls
 createTimeBlocks();
 hourUpdate();
-console.log(localStorage);
+
+
+
